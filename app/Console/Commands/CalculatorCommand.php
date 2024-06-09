@@ -6,17 +6,16 @@ use App\Calculator\CalculatorFactory;
 use App\Calculator\Operation;
 use Illuminate\Console\Command;
 
+use InvalidArgumentException;
+
+use function Laravel\Prompts\confirm;
+use function Laravel\Prompts\error;
 use function Laravel\Prompts\select;
 use function Laravel\Prompts\text;
 use function Laravel\Prompts\info;
 
 class CalculatorCommand extends Command
 {
-    public function __construct(private readonly CalculatorFactory $calculatorFactory)
-    {
-        parent::__construct();
-    }
-
     /**
      * The name and signature of the console command.
      *
@@ -36,15 +35,23 @@ class CalculatorCommand extends Command
      */
     public function handle()
     {
-        $computedParams = [];
         $operationChoose = select('What operation to perform?', array_column(Operation::cases(), 'value'));
         $operation = Operation::tryFrom($operationChoose);
-        $computedParams[] = text('First number', required: true, validate: ['name' => 'numeric']);
-        if (false === $operation->isSquare()) {
-            $computedParams[] = text('Second number', required: true, validate: ['name' => 'numeric']);
+        $computedParams = [];
+        while(confirm('Do you want to add number?')) {
+            $computedParams[] = text('Add number', required: true, validate: ['name' => 'numeric']);
         }
-        $calculator = $this->calculatorFactory->createByOperation($operation);
-        $computeResult = $calculator->compute($computedParams);
-        info('Result is: ' . $computeResult);
+        if (empty($computedParams)) {
+            info('No params used.');
+            return 0;
+        }
+        $calculator = CalculatorFactory::createByOperation($operation);
+        try {
+            $computeResult = $calculator->compute($computedParams);
+            info('Result is: ' . $computeResult);
+        } catch (InvalidArgumentException $exception) {
+
+            error($exception->getMessage());
+        }
     }
 }

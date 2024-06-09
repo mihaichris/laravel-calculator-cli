@@ -4,7 +4,7 @@ namespace App\Calculator;
 
 class CalculatorFactory
 {
-    public function createByOperation(Operation $operation): Calculator
+    public static function createByOperation(Operation $operation): Calculator
     {
         return match ($operation) {
             Operation::ADDITION => new Add(),
